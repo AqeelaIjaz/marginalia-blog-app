@@ -18,6 +18,11 @@ const blogSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    category: {
+      type: String,
+      enum: ["General", "Tech", "Life", "Travel", "Food", "Opinion"],
+      default: "General",
+    },
   },
   { timestamps: true }
 );

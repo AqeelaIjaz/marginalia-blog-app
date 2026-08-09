@@ -36,4 +36,21 @@ const getBlogs = async (req, res) => {
   }
 };
 
-module.exports = { createBlog, getBlogs };
+// @route   GET /api/blogs/:id
+// @desc    Get a single blog post by its ID (for the blog detail page)
+const getSingleBlog = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id).populate("author", "name email");
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog post not found" });
+    }
+
+    res.status(200).json(blog);
+  } catch (error) {
+    // Invalid ID format (not a valid MongoDB ObjectId) also lands here
+    res.status(404).json({ message: "Blog post not found" });
+  }
+};
+
+module.exports = { createBlog, getBlogs, getSingleBlog };

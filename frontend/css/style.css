@@ -378,6 +378,51 @@ footer.site-footer a:hover { color: var(--accent-teal); }
 .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
 
 /* ============================================
+   SEARCH + CATEGORY FILTER
+   ============================================ */
+.feed-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.feed-filters input,
+.feed-filters select {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 6px;
+  background: var(--bg-alt);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.feed-filters input { flex: 1; min-width: 180px; }
+.feed-filters input::placeholder { color: var(--ink-faint); }
+.feed-filters input:focus, .feed-filters select:focus { border-color: var(--accent-teal); outline: none; }
+
+.category-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-marigold);
+  border: 1px solid rgba(242, 169, 59, 0.35);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+/* Edit/Delete action row on the user's own post cards */
+.post-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* ============================================
    SINGLE POST DETAIL VIEW
    ============================================ */
 .post-detail-header { margin-bottom: 28px; }

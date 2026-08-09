@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your profile — Marginalia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="site-wrap">
+
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <div class="wordmark">Margin<span>alia</span></div>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="create-blog.html">Write</a>
+        </div>
+        <div class="nav-user" id="navUser"></div>
+      </div>
+    </nav>
+
+    <main class="container" style="max-width: 520px; padding-top: 64px; padding-bottom: 80px;">
+      <div class="form-card">
+        <div class="form-eyebrow">Your account</div>
+        <h2>Profile</h2>
+
+        <div class="form-message" id="formMessage"></div>
+
+        <div id="profileDetails" style="margin-top: 10px;">
+          <p class="feed-count">Loading profile...</p>
+        </div>
+
+        <div style="margin-top: 28px; display: flex; gap: 12px;">
+          <a href="dashboard.html" class="btn btn-secondary btn-block">Back to dashboard</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <span>© 2026 Marginalia · Codomax Internship, Module 5</span>
+        <span><a href="index.html">Home</a> · <a href="dashboard.html">Dashboard</a></span>
+        <span>Built with Node.js + Express + MongoDB</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

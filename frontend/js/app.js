@@ -1,7 +1,7 @@
 // ============================================
 // CHANGE THIS if your backend runs on a different port/URL
 // ============================================
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = "https://marginalia-blog-app.vercel.app/api";
 
 // ---------- Helpers ----------
 function getToken() {

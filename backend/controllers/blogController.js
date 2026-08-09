@@ -122,4 +122,18 @@ const deleteBlog = async (req, res) => {
   }
 };
 
-module.exports = { createBlog, getBlogs, getSingleBlog, updateBlog, deleteBlog };
+// @route   GET /api/blogs/mine
+// @desc    Get only the logged-in user's own posts (secure — filtered by their user ID, not by name)
+const getMyBlogs = async (req, res) => {
+  try {
+    const blogs = await Blog.find({ author: req.userId })
+      .populate("author", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(blogs);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { createBlog, getBlogs, getSingleBlog, updateBlog, deleteBlog, getMyBlogs };

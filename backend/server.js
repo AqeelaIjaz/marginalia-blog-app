@@ -26,8 +26,14 @@ app.get("/", (req, res) => {
   res.send("Blog App backend is running ✅");
 });
 
-// 5. Start the server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// 5. Start the server (only when run directly, e.g. locally with "npm run dev")
+// Vercel imports this file as a serverless function instead of running it directly,
+// so app.listen() is skipped in that environment.
+if (process.env.VERCEL !== "1") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

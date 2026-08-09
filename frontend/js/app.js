@@ -380,6 +380,41 @@ if (deleteBtn && modalOverlay) {
   });
 }
 
+// ============================================
+// SINGLE POST PAGE (blog-post.html)
+// ============================================
+const postContent = document.getElementById("postContent");
+if (postContent) {
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get("id");
+  loadSinglePost(postContent, postId);
+}
+
+async function loadSinglePost(containerEl, id) {
+  if (!id) {
+    containerEl.innerHTML = `<div class="post-not-found"><p>No post was specified.</p><a href="index.html" class="btn btn-primary">Back to Home</a></div>`;
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/blogs/${id}`);
+    if (!res.ok) {
+      containerEl.innerHTML = `<div class="post-not-found"><p>This post could not be found. It may have been removed.</p><a href="index.html" class="btn btn-primary">Back to Home</a></div>`;
+      return;
+    }
+    const blog = await res.json();
+
+    containerEl.innerHTML = `
+      <div class="post-detail-header">
+        <div class="post-detail-eyebrow">${formatDate(blog.createdAt)} · by ${escapeHtml(blog.author?.name || "Unknown")}</div>
+        <h1>${escapeHtml(blog.title)}</h1>
+      </div>
+      <div class="post-detail-body">${escapeHtml(blog.content)}</div>
+    `;
+  } catch (err) {
+    containerEl.innerHTML = `<div class="post-not-found"><p>Could not load this post. Is the backend server running on ${API_BASE}?</p></div>`;
+  }
+}
+
 // ---------- Shared feed loader ----------
 async function loadFeed(containerEl, filterByAuthorName) {
   containerEl.innerHTML = `<p class="feed-count">Loading posts...</p>`;
@@ -403,12 +438,14 @@ async function loadFeed(containerEl, filterByAuthorName) {
     containerEl.innerHTML = blogs
       .map(
         (blog) => `
-        <article class="blog-card">
-          <span class="bookmark-tab">${formatDate(blog.createdAt)}</span>
-          <h3>${escapeHtml(blog.title)}</h3>
-          <p class="excerpt">${escapeHtml(blog.content).slice(0, 180)}${blog.content.length > 180 ? "…" : ""}</p>
-          <div class="byline">by ${escapeHtml(blog.author?.name || "Unknown")}</div>
-        </article>`
+        <a href="blog-post.html?id=${blog._id}" style="text-decoration:none; color:inherit;">
+          <article class="blog-card">
+            <span class="bookmark-tab">${formatDate(blog.createdAt)}</span>
+            <h3>${escapeHtml(blog.title)}</h3>
+            <p class="excerpt">${escapeHtml(blog.content).slice(0, 180)}${blog.content.length > 180 ? "…" : ""}</p>
+            <div class="byline">by ${escapeHtml(blog.author?.name || "Unknown")}</div>
+          </article>
+        </a>`
       )
       .join("");
   } catch (err) {

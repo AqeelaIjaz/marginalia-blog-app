@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Marginalia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="site-wrap">
+
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <div class="wordmark">Margin<span>alia</span></div>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html" class="active">Dashboard</a>
+          <a href="create-blog.html">Write</a>
+        </div>
+        <div class="nav-user" id="navUser"></div>
+      </div>
+    </nav>
+
+    <main class="container">
+      <div class="dash-header">
+        <div>
+          <div class="dash-welcome-eyebrow">Your dashboard</div>
+          <h1>Welcome back, <span id="welcomeName">writer</span>.</h1>
+        </div>
+        <a href="create-blog.html" class="btn btn-primary">Write a new post</a>
+      </div>
+
+      <section class="feed">
+        <div class="feed-heading">
+          <h2>Your posts</h2>
+          <span class="feed-count" id="dashCount"></span>
+        </div>
+        <div id="dashFeed"></div>
+      </section>
+
+      <section class="danger-zone">
+        <h3>Delete account</h3>
+        <p>This permanently deletes your account. Your published posts will remain but will no longer be linked to your profile. This cannot be undone.</p>
+        <button id="deleteAccountBtn" class="btn btn-danger btn-sm">Delete my account</button>
+      </section>
+    </main>
+
+    <div class="modal-overlay" id="deleteModal">
+      <div class="modal-box">
+        <h3>Delete your account?</h3>
+        <p>This is permanent. You'll be signed out immediately and won't be able to undo this.</p>
+        <div class="modal-actions">
+          <button id="cancelDeleteBtn" class="btn btn-secondary btn-block">Cancel</button>
+          <button id="confirmDeleteBtn" class="btn btn-danger btn-block">Yes, delete my account</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="container">
+        <span>© 2026 Marginalia · Codomax Internship, Module 2</span>
+        <span><a href="index.html">Home</a> · <a href="create-blog.html">Write</a></span>
+        <span>Built with Node.js + Express + MongoDB</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -36,6 +36,17 @@
             <input type="text" id="title" name="title" placeholder="Give your post a title" required />
           </div>
           <div class="field">
+            <label for="category">Category</label>
+            <select id="category" name="category" style="width:100%; padding:12px 14px; border:1.5px solid var(--border-light); border-radius:6px; background:var(--bg-alt); color:var(--ink); font-family:var(--font-body); font-size:0.95rem;">
+              <option value="General">General</option>
+              <option value="Tech">Tech</option>
+              <option value="Life">Life</option>
+              <option value="Travel">Travel</option>
+              <option value="Food">Food</option>
+              <option value="Opinion">Opinion</option>
+            </select>
+          </div>
+          <div class="field">
             <label for="content">Content</label>
             <textarea id="content" name="content" placeholder="Write your post here..." required></textarea>
           </div>

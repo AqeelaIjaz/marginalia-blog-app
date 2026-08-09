@@ -292,6 +292,7 @@ if (createBlogForm) {
 
     const title = createBlogForm.title.value.trim();
     const content = createBlogForm.content.value.trim();
+    const category = createBlogForm.category ? createBlogForm.category.value : "General";
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Publishing...";
@@ -303,7 +304,7 @@ if (createBlogForm) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, category }),
       });
       const data = await res.json();
 
@@ -325,13 +326,39 @@ if (createBlogForm) {
 }
 
 // ============================================
-// HOME PAGE — public feed
+// HOME PAGE — public feed, with search + category filter
 // ============================================
 const homeFeed = document.getElementById("homeFeed");
-if (homeFeed) loadFeed(homeFeed, null);
+if (homeFeed) {
+  const searchInput = document.getElementById("searchInput");
+  const categoryFilter = document.getElementById("categoryFilter");
+
+  loadFeed(homeFeed, { search: "", category: "All" });
+
+  let searchTimeout;
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadFeed(homeFeed, {
+          search: searchInput.value.trim(),
+          category: categoryFilter ? categoryFilter.value : "All",
+        });
+      }, 350); // debounce so it doesn't fetch on every keystroke
+    });
+  }
+  if (categoryFilter) {
+    categoryFilter.addEventListener("change", () => {
+      loadFeed(homeFeed, {
+        search: searchInput ? searchInput.value.trim() : "",
+        category: categoryFilter.value,
+      });
+    });
+  }
+}
 
 // ============================================
-// DASHBOARD PAGE — logged-in user's blogs + delete account
+// DASHBOARD PAGE — logged-in user's blogs + edit/delete + delete account
 // ============================================
 const dashFeed = document.getElementById("dashFeed");
 if (dashFeed) {
@@ -340,7 +367,7 @@ if (dashFeed) {
   } else {
     const welcomeName = document.getElementById("welcomeName");
     if (welcomeName) welcomeName.textContent = getUserName() || "there";
-    loadFeed(dashFeed, getUserName());
+    loadFeed(dashFeed, { filterByAuthorName: getUserName(), showActions: true });
   }
 }
 
@@ -381,6 +408,79 @@ if (deleteBtn && modalOverlay) {
 }
 
 // ============================================
+// EDIT BLOG PAGE (edit-blog.html)
+// ============================================
+const editBlogForm = document.getElementById("editBlogForm");
+if (editBlogForm) {
+  if (!getToken()) window.location.href = "login.html";
+
+  const params = new URLSearchParams(window.location.search);
+  const editId = params.get("id");
+  const msgEl = document.getElementById("formMessage");
+
+  if (!editId) {
+    showMessage(msgEl, "No post was specified to edit.", "error");
+  } else {
+    // Pre-fill the form with the existing post's data
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/blogs/${editId}`);
+        const blog = await res.json();
+        if (!res.ok) {
+          showMessage(msgEl, blog.message || "Could not load this post", "error");
+          editBlogForm.style.display = "none";
+          return;
+        }
+        editBlogForm.title.value = blog.title;
+        editBlogForm.content.value = blog.content;
+        if (editBlogForm.category) editBlogForm.category.value = blog.category || "General";
+      } catch (err) {
+        showMessage(msgEl, "Could not reach the server.", "error");
+        editBlogForm.style.display = "none";
+      }
+    })();
+  }
+
+  editBlogForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = editBlogForm.querySelector("button[type=submit]");
+
+    const title = editBlogForm.title.value.trim();
+    const content = editBlogForm.content.value.trim();
+    const category = editBlogForm.category ? editBlogForm.category.value : "General";
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
+
+    try {
+      const res = await fetch(`${API_BASE}/blogs/${editId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ title, content, category }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMessage(msgEl, data.message || "Could not save changes", "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Save changes";
+        return;
+      }
+
+      showMessage(msgEl, "Saved. Redirecting to your dashboard...", "success");
+      setTimeout(() => (window.location.href = "dashboard.html"), 700);
+    } catch (err) {
+      showMessage(msgEl, "Could not reach the server. Is the backend running?", "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Save changes";
+    }
+  });
+}
+
+// ============================================
 // SINGLE POST PAGE (blog-post.html)
 // ============================================
 const postContent = document.getElementById("postContent");
@@ -402,24 +502,67 @@ async function loadSinglePost(containerEl, id) {
       return;
     }
     const blog = await res.json();
+    const isOwner = getUserName() && blog.author?.name === getUserName();
 
     containerEl.innerHTML = `
       <div class="post-detail-header">
+        <span class="category-badge">${escapeHtml(blog.category || "General")}</span>
         <div class="post-detail-eyebrow">${formatDate(blog.createdAt)} · by ${escapeHtml(blog.author?.name || "Unknown")}</div>
         <h1>${escapeHtml(blog.title)}</h1>
       </div>
       <div class="post-detail-body">${escapeHtml(blog.content)}</div>
+      ${
+        isOwner
+          ? `<div class="post-actions">
+              <a href="edit-blog.html?id=${blog._id}" class="btn btn-secondary btn-sm">Edit post</a>
+              <button class="btn btn-danger btn-sm" id="deleteThisPostBtn" data-id="${blog._id}">Delete post</button>
+            </div>`
+          : ""
+      }
     `;
+
+    const deleteThisPostBtn = document.getElementById("deleteThisPostBtn");
+    if (deleteThisPostBtn) {
+      deleteThisPostBtn.addEventListener("click", async () => {
+        if (!confirm("Delete this post? This cannot be undone.")) return;
+        deleteThisPostBtn.disabled = true;
+        deleteThisPostBtn.textContent = "Deleting...";
+        try {
+          const delRes = await fetch(`${API_BASE}/blogs/${blog._id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!delRes.ok) {
+            const delData = await delRes.json();
+            alert(delData.message || "Could not delete post");
+            deleteThisPostBtn.disabled = false;
+            deleteThisPostBtn.textContent = "Delete post";
+            return;
+          }
+          window.location.href = "dashboard.html";
+        } catch (err) {
+          alert("Could not reach the server.");
+          deleteThisPostBtn.disabled = false;
+          deleteThisPostBtn.textContent = "Delete post";
+        }
+      });
+    }
   } catch (err) {
     containerEl.innerHTML = `<div class="post-not-found"><p>Could not load this post. Is the backend server running on ${API_BASE}?</p></div>`;
   }
 }
 
 // ---------- Shared feed loader ----------
-async function loadFeed(containerEl, filterByAuthorName) {
+async function loadFeed(containerEl, options = {}) {
+  const { filterByAuthorName, showActions, search, category } = options;
+
   containerEl.innerHTML = `<p class="feed-count">Loading posts...</p>`;
   try {
-    const res = await fetch(`${API_BASE}/blogs`);
+    const queryParams = new URLSearchParams();
+    if (search) queryParams.set("search", search);
+    if (category && category !== "All") queryParams.set("category", category);
+
+    const res = await fetch(`${API_BASE}/blogs?${queryParams.toString()}`);
     let blogs = await res.json();
 
     if (filterByAuthorName) {
@@ -429,25 +572,65 @@ async function loadFeed(containerEl, filterByAuthorName) {
     if (!blogs.length) {
       containerEl.innerHTML = `
         <div class="empty-state">
-          <p>${filterByAuthorName ? "You haven't published anything yet." : "No posts yet. Be the first to write one."}</p>
+          <p>${filterByAuthorName ? "You haven't published anything yet." : "No posts match. Try a different search or category."}</p>
           <a href="create-blog.html" class="btn btn-primary">Write a post</a>
         </div>`;
       return;
     }
 
     containerEl.innerHTML = blogs
-      .map(
-        (blog) => `
-        <a href="blog-post.html?id=${blog._id}" style="text-decoration:none; color:inherit;">
-          <article class="blog-card">
-            <span class="bookmark-tab">${formatDate(blog.createdAt)}</span>
-            <h3>${escapeHtml(blog.title)}</h3>
-            <p class="excerpt">${escapeHtml(blog.content).slice(0, 180)}${blog.content.length > 180 ? "…" : ""}</p>
-            <div class="byline">by ${escapeHtml(blog.author?.name || "Unknown")}</div>
-          </article>
-        </a>`
-      )
+      .map((blog) => {
+        const cardInner = `
+          <span class="bookmark-tab">${formatDate(blog.createdAt)}</span>
+          <span class="category-badge">${escapeHtml(blog.category || "General")}</span>
+          <h3>${escapeHtml(blog.title)}</h3>
+          <p class="excerpt">${escapeHtml(blog.content).slice(0, 180)}${blog.content.length > 180 ? "…" : ""}</p>
+          <div class="byline">by ${escapeHtml(blog.author?.name || "Unknown")}</div>
+          ${
+            showActions
+              ? `<div class="post-actions">
+                  <a href="edit-blog.html?id=${blog._id}" class="btn btn-secondary btn-sm">Edit</a>
+                  <button class="btn btn-danger btn-sm delete-post-btn" data-id="${blog._id}">Delete</button>
+                </div>`
+              : ""
+          }
+        `;
+
+        return showActions
+          ? `<article class="blog-card">${cardInner}</article>`
+          : `<a href="blog-post.html?id=${blog._id}" style="text-decoration:none; color:inherit;"><article class="blog-card">${cardInner}</article></a>`;
+      })
       .join("");
+
+    // Wire up delete buttons (only present when showActions is true)
+    containerEl.querySelectorAll(".delete-post-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const id = btn.dataset.id;
+        if (!confirm("Delete this post? This cannot be undone.")) return;
+
+        btn.disabled = true;
+        btn.textContent = "Deleting...";
+        try {
+          const res = await fetch(`${API_BASE}/blogs/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            alert(data.message || "Could not delete post");
+            btn.disabled = false;
+            btn.textContent = "Delete";
+            return;
+          }
+          loadFeed(containerEl, options); // refresh the list
+        } catch (err) {
+          alert("Could not reach the server.");
+          btn.disabled = false;
+          btn.textContent = "Delete";
+        }
+      });
+    });
   } catch (err) {
     containerEl.innerHTML = `<div class="empty-state"><p>Could not load posts. Is the backend server running on ${API_BASE}?</p></div>`;
   }

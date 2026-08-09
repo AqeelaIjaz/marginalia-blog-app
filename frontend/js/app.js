@@ -67,7 +67,7 @@ function renderNavUser() {
 
   const name = getUserName();
   if (name) {
-    navUserEl.innerHTML = `Hi, ${escapeHtml(name)} · <a href="#" id="signOutLink">Sign out</a>`;
+    navUserEl.innerHTML = `<a href="profile.html">Hi, ${escapeHtml(name)}</a> · <a href="#" id="signOutLink">Sign out</a>`;
     document.getElementById("signOutLink").addEventListener("click", (e) => {
       e.preventDefault();
       signOut();
@@ -367,7 +367,7 @@ if (dashFeed) {
   } else {
     const welcomeName = document.getElementById("welcomeName");
     if (welcomeName) welcomeName.textContent = getUserName() || "there";
-    loadFeed(dashFeed, { filterByAuthorName: getUserName(), showActions: true });
+    loadFeed(dashFeed, { useMine: true, showActions: true });
   }
 }
 
@@ -405,6 +405,50 @@ if (deleteBtn && modalOverlay) {
       confirmBtn.textContent = "Yes, delete my account";
     }
   });
+}
+
+// ============================================
+// PROFILE PAGE (profile.html)
+// ============================================
+const profileDetails = document.getElementById("profileDetails");
+if (profileDetails) {
+  if (!getToken()) {
+    window.location.href = "login.html";
+  } else {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const user = await res.json();
+
+        if (!res.ok) {
+          profileDetails.innerHTML = `<p>Could not load your profile.</p>`;
+          return;
+        }
+
+        const joined = new Date(user.createdAt).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+
+        profileDetails.innerHTML = `
+          <div class="field">
+            <label>Name</label>
+            <div style="padding:12px 14px; border:1.5px solid var(--border-light); border-radius:6px; background:var(--bg-alt);">${escapeHtml(user.name)}</div>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <div style="padding:12px 14px; border:1.5px solid var(--border-light); border-radius:6px; background:var(--bg-alt);">${escapeHtml(user.email)}</div>
+          </div>
+          <div class="field-hint" style="margin-top:-8px;">Member since ${joined}</div>
+        `;
+      } catch (err) {
+        profileDetails.innerHTML = `<p>Could not reach the server. Is the backend running?</p>`;
+      }
+    })();
+  }
 }
 
 // ============================================
@@ -554,25 +598,35 @@ async function loadSinglePost(containerEl, id) {
 
 // ---------- Shared feed loader ----------
 async function loadFeed(containerEl, options = {}) {
-  const { filterByAuthorName, showActions, search, category } = options;
+  const { filterByAuthorName, showActions, search, category, useMine } = options;
 
   containerEl.innerHTML = `<p class="feed-count">Loading posts...</p>`;
   try {
-    const queryParams = new URLSearchParams();
-    if (search) queryParams.set("search", search);
-    if (category && category !== "All") queryParams.set("category", category);
+    let blogs;
 
-    const res = await fetch(`${API_BASE}/blogs?${queryParams.toString()}`);
-    let blogs = await res.json();
+    if (useMine) {
+      // Secure path: ask the backend for only this authenticated user's posts,
+      // filtered server-side by their actual user ID (not by matching their name)
+      const res = await fetch(`${API_BASE}/blogs/mine`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      blogs = await res.json();
+    } else {
+      const queryParams = new URLSearchParams();
+      if (search) queryParams.set("search", search);
+      if (category && category !== "All") queryParams.set("category", category);
+      const res = await fetch(`${API_BASE}/blogs?${queryParams.toString()}`);
+      blogs = await res.json();
 
-    if (filterByAuthorName) {
-      blogs = blogs.filter((b) => b.author && b.author.name === filterByAuthorName);
+      if (filterByAuthorName) {
+        blogs = blogs.filter((b) => b.author && b.author.name === filterByAuthorName);
+      }
     }
 
     if (!blogs.length) {
       containerEl.innerHTML = `
         <div class="empty-state">
-          <p>${filterByAuthorName ? "You haven't published anything yet." : "No posts match. Try a different search or category."}</p>
+          <p>${useMine || filterByAuthorName ? "You haven't published anything yet." : "No posts match. Try a different search or category."}</p>
           <a href="create-blog.html" class="btn btn-primary">Write a post</a>
         </div>`;
       return;
